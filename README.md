@@ -38,3 +38,9 @@ If you have concerns about security, performance, or compatibility, please consi
     ```bash
     $ hass -c config
     ```
+
+## Development plan
+
+- [ ] translations for subjects and emails in config flow
+- [ ] error handling in config flow for url tests
+- [ ] internal/external redirect url fixes (not working during login)
