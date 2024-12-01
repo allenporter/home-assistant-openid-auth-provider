@@ -1,25 +1,37 @@
 """openid_auth_provider custom component."""
 
 from __future__ import annotations
-
+import sys
 import logging
 
-import voluptuous as vol
-
-from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant
+from homeassistant.const import Platform
+from homeassistant.config_entries import ConfigEntry
+from homeassistant.helpers.typing import ConfigType
 
 from .const import DOMAIN
+from . import openid_auth_provider
+
+
+__all__ = [
+    "DOMAIN",
+]
 
 _LOGGER = logging.getLogger(__name__)
 
+PLATFORMS: tuple[Platform] = ()  # type: ignore
 
-PLATFORMS: tuple[Platform] = (Platform.EVENT,)
+
+async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
+    """Set up the config."""
+    sys.modules["homeassistant.auth.providers.openid"] = openid_auth_provider
+    openid_auth_provider.register(hass)
+    return True
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Set up a config entry."""
+
     await hass.config_entries.async_forward_entry_setups(
         entry,
         platforms=PLATFORMS,

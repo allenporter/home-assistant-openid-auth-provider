@@ -3,9 +3,11 @@
   "name": "OpenID Auth Provider",
   "codeowners": ["@allenporter"],
   "config_flow": true,
+  "dependencies": ["auth", "http"],
   "documentation": "https://github.com/allenporter/home-assistant-openid-auth-provider",
   "integration_type": "service",
   "iot_class": "calculated",
   "issue_tracker": "https://github.com/allenporter/home-assistant-openid-auth-provider/issues",
+  "requirements": ["python-jose>=3.3.0"],
   "version": "0.0.1"
 }
