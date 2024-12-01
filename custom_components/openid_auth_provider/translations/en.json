@@ -1,3 +1,30 @@
 {
-    "title": "OpenID Auth Provider"
+    "title": "OpenID Auth Provider",
+    "config": {
+        "step": {
+            "user": {
+                "title": "Configure OpenID Auth Provider",
+                "description": "You can use OpenID Connect to enable single sign-on (SSO) in Home Assistant as an additional Authentication Provider.\n\nThis software is an unofficial custom component for Home Assistant. It is not developed, endorsed, or affiliated with the Home Assistant project. Use this software at your own risk.\n\nWhile efforts have been made to ensure the security and functionality of this software, it may introduce vulnerabilities, compatibility issues, or unexpected behavior. By installing and using this software, you accept full responsibility for any outcomes or consequences.",
+                "data": {
+                    "name": "Name",
+                    "configuration": "OpenID URL",
+                    "client_id": "Client ID",
+                    "client_secret": "Client Secret",
+                    "emails": "Emails",
+                    "subjects": "Subjects"
+                },
+                "data_description": {
+                    "name": "The name of the OpenID Connect provider. This is the name that will be displayed in the Home Assistant UI.",
+                    "configuration": "The URL of the OpenID Connect provider. This is the URL that Home Assistant will use to authenticate users.",
+                    "client_id": "The client ID that Home Assistant will use to authenticate with the OpenID Connect provider.",
+                    "client_secret": "The client secret that Home Assistant will use to authenticate with the OpenID Connect provider.",
+                    "emails": "A list of email addresses, one per line, that are allowed to authenticate with Home Assistant.",
+                    "subjects": "A list of subjects, one per line, that are allowed to authenticate with Home Assistant."
+                }
+            }
+        },
+        "error": {
+            "missing_email_or_subject": "You must provide at least one email address or subject."
+        }
+    }
 }

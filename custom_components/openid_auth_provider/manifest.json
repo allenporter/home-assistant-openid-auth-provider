@@ -9,5 +9,6 @@
   "iot_class": "calculated",
   "issue_tracker": "https://github.com/allenporter/home-assistant-openid-auth-provider/issues",
   "requirements": ["python-jose>=3.3.0"],
+  "single_config_entry": true,
   "version": "0.0.1"
 }

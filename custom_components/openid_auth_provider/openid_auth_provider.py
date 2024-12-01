@@ -31,19 +31,14 @@ from homeassistant.auth.providers import (
 )
 from homeassistant.auth.models import Credentials, UserMeta
 
-REQUIREMENTS = ["python-jose==3.1.0"]
+from .const import CONF_CLIENT_ID, CONF_CLIENT_SECRET, CONF_CONFIGURATION, CONF_EMAILS, CONF_SUBJECTS
+
+_LOGGER = logging.getLogger(__name__)
 
 AUTH_CALLBACK_PATH = "/auth/openid/callback"
 DATA_JWT_SECRET = "openid_jwt_secret"
 HEADER_FRONTEND_BASE = "HA-Frontend-Base"
 
-_LOGGER = logging.getLogger(__name__)
-
-CONF_CLIENT_ID = "client_id"
-CONF_CLIENT_SECRET = "client_secret"
-CONF_CONFIGURATION = "configuration"
-CONF_EMAILS = "emails"
-CONF_SUBJECTS = "subjects"
 
 CONFIG_SCHEMA = AUTH_PROVIDER_SCHEMA.extend(
     {

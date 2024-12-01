@@ -7,18 +7,16 @@ from homeassistant import config_entries
 from homeassistant.data_entry_flow import FlowResultType
 from homeassistant.core import HomeAssistant
 from homeassistant.const import (
-    CONF_DEVICE_ID,
+    CONF_NAME,
 )
 
+from custom_components.openid_auth_provider.const import DOMAIN, CONF_CONFIGURATION, CONF_CLIENT_ID, CONF_CLIENT_SECRET, CONF_EMAILS
 
-from custom_components.openid_auth_provider.const import DOMAIN
 
-
-async def test_select_device(
+async def test_config_flow(
     hass: HomeAssistant,
-    zwave_device_id: str,
 ) -> None:
-    """Test selecting a device in the configuration flow."""
+    """Test completing the configuration flow."""
     result = await hass.config_entries.flow.async_init(
         DOMAIN, context={"source": config_entries.SOURCE_USER}
     )
@@ -31,15 +29,23 @@ async def test_select_device(
         result = await hass.config_entries.flow.async_configure(
             result["flow_id"],
             {
-                CONF_DEVICE_ID: zwave_device_id,
+                CONF_NAME: "Example",
+                CONF_CONFIGURATION: "https://example.com",
+                CONF_CLIENT_ID: "client-id",
+                CONF_CLIENT_SECRET: "client-secret",
+                CONF_EMAILS: ["user@dex.local", "user@dex.remote"],
             },
         )
         await hass.async_block_till_done()
 
     assert result.get("type") is FlowResultType.CREATE_ENTRY
-    assert result.get("title") == "Open ID Auth Provider"
+    assert result.get("title") == "Example"
     assert result.get("data") == {}
     assert result.get("options") == {
-        CONF_DEVICE_ID: zwave_device_id,
+        CONF_NAME: "Example",
+        CONF_CONFIGURATION: "https://example.com",
+        CONF_CLIENT_ID: "client-id",
+        CONF_CLIENT_SECRET: "client-secret",
+        CONF_EMAILS: ["user@dex.local", "user@dex.remote"],
     }
     assert len(mock_setup.mock_calls) == 1

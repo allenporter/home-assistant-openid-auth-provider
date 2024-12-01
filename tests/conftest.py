@@ -6,7 +6,7 @@ from unittest.mock import patch
 
 import pytest
 
-from homeassistant.const import Platform
+from homeassistant.const import Platform, CONF_NAME
 from homeassistant.core import HomeAssistant
 from homeassistant.setup import async_setup_component
 
@@ -15,10 +15,16 @@ from pytest_homeassistant_custom_component.common import (
 )
 
 from custom_components.openid_auth_provider.const import (
-    DOMAIN,
+    DOMAIN, CONF_CONFIGURATION, CONF_CLIENT_ID, CONF_CLIENT_SECRET, CONF_EMAILS, CONF_SUBJECTS,
 )
 
 _LOGGER = logging.getLogger(__name__)
+
+CONST_DESCRIPTION_URI = "https://openid.test/.well-known/openid-configuration"
+CONST_CLIENT_ID = "123client_id456"
+CONST_CLIENT_SECRET = "123client_secret456"
+CONST_SUBJECT = "248289761001"
+CONST_EMAIL = "john.doe@openid.test"
 
 
 @pytest.fixture(autouse=True)
@@ -52,22 +58,36 @@ async def mock_setup_integration(
         await hass.async_block_till_done()
         yield
 
+@pytest.fixture(name="emails")
+def mock_emails() -> list[str]:
+    """Fixture for emails."""
+    return [CONST_EMAIL]
 
-@pytest.fixture(name="zwave_device_id")
-def mock_zwave_device_id() -> str:
-    """Fixture for a Z-Wave device ID."""
-    return "some-device-id"
+
+@pytest.fixture(name="subjects")
+def mock_subjects() -> list[str]:
+    """Fixture for subjects."""
+    return [CONST_SUBJECT]
 
 
 @pytest.fixture(name="config_entry")
 async def mock_config_entry(
-    hass: HomeAssistant, zwave_device_id: str
+    hass: HomeAssistant,
+    emails: list[str],
+    subjects: list[str],
 ) -> MockConfigEntry:
     """Fixture to create a configuration entry."""
     config_entry = MockConfigEntry(
         data={},
         domain=DOMAIN,
-        options={},
+        options={
+            CONF_NAME: "Example",
+            CONF_CONFIGURATION: CONST_DESCRIPTION_URI,
+            CONF_CLIENT_ID: CONST_CLIENT_ID,
+            CONF_CLIENT_SECRET: CONF_CLIENT_SECRET,
+            CONF_SUBJECTS: subjects,
+            CONF_EMAILS: emails,
+        },
     )
     config_entry.add_to_hass(hass)
     assert await hass.config_entries.async_setup(config_entry.entry_id)

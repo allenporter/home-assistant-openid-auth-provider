@@ -21,14 +21,16 @@ from custom_components.openid_auth_provider.openid_auth_provider import (
 )
 from pytest_homeassistant_custom_component.test_util.aiohttp import AiohttpClientMocker
 from pytest_homeassistant_custom_component.typing import ClientSessionGenerator
+from pytest_homeassistant_custom_component.common import MockConfigEntry
+
+
+from .conftest import CONST_DESCRIPTION_URI, CONST_CLIENT_ID, CONST_CLIENT_SECRET, CONST_SUBJECT, CONST_EMAIL
 
 
 _LOGGER = logging.getLogger(__name__)
 
 
 PROVIDER_MODULE = "homeassistant.auth.providers.openid"
-CONST_CLIENT_ID = "123client_id456"
-CONST_CLIENT_SECRET = "123client_secret456"
 
 CONST_JWKS_URI = "https://jwks.test/jwks"
 CONST_JWKS_KEY = "bla"
@@ -37,7 +39,6 @@ CONST_JWKS = {"keys": [CONST_JWKS_KEY]}
 CONST_AUTHORIZATION_ENDPOINT = "https://openid.test/authorize"
 CONST_TOKEN_ENDPOINT = "https://openid.test/authorize"
 
-CONST_DESCRIPTION_URI = "https://openid.test/.well-known/openid-configuration"
 CONST_DESCRIPTION = {
     "issuer": "https://openid.test/",
     "jwks_uri": CONST_JWKS_URI,
@@ -52,8 +53,6 @@ CONST_DESCRIPTION = {
 CONST_ACCESS_TOKEN = "dummy_access_token"
 
 CONST_NONCE = "dummy_nonce"
-CONST_EMAIL = "john.doe@openid.test"
-CONST_SUBJECT = "248289761001"
 
 CONST_ID_TOKEN = {
     "iss": "https://openid.test/",
@@ -104,7 +103,7 @@ async def endpoints_fixture(hass: HomeAssistant) -> None:
         hass,
         {"external_url": "http://example.com"},
     )
-    assert await async_setup_component(hass, "openid_auth_provider", {})
+    # assert await async_setup_component(hass, "openid_auth_provider", {})
 
 
 async def _run_external_flow(
@@ -140,23 +139,10 @@ async def _run_external_flow(
 
 @pytest.mark.usefixtures("current_request_with_host", "openid_server", "endpoints")
 async def test_login_flow_validates_email(
-    hass: HomeAssistant, hass_client_no_auth: ClientSessionGenerator
+    hass: HomeAssistant, hass_client_no_auth: ClientSessionGenerator, config_entry: MockConfigEntry,
 ) -> None:
-    """Test login flow."""
-    manager = await auth_manager_from_config(
-        hass,
-        [
-            {
-                "type": "openid",
-                "configuration": CONST_DESCRIPTION_URI,
-                "client_id": CONST_CLIENT_ID,
-                "client_secret": CONST_CLIENT_SECRET,
-                "emails": [CONST_EMAIL],
-            }
-        ],
-        [],
-    )
-    hass.auth = manager
+    """Test login flow with emails."""
+    manager = hass.auth
 
     client = await hass_client_no_auth()
     flow_id = await _run_external_flow(hass, manager, client)
@@ -170,23 +156,10 @@ async def test_login_flow_validates_email(
 @pytest.mark.usefixtures("current_request_with_host", "openid_server", "endpoints")
 async def test_login_flow_validates_subject(
     hass: HomeAssistant,
-    hass_client_no_auth: ClientSessionGenerator,
+    hass_client_no_auth: ClientSessionGenerator, config_entry: MockConfigEntry,
 ) -> None:
-    """Test login flow."""
-    manager = await auth_manager_from_config(
-        hass,
-        [
-            {
-                "type": "openid",
-                "configuration": CONST_DESCRIPTION_URI,
-                "client_id": CONST_CLIENT_ID,
-                "client_secret": CONST_CLIENT_SECRET,
-                "subjects": [CONST_SUBJECT],
-            }
-        ],
-        [],
-    )
-    hass.auth = manager
+    """Test login flow with subjects."""
+    manager = hass.auth
 
     client = await hass_client_no_auth()
     flow_id = await _run_external_flow(hass, manager, client)
@@ -198,25 +171,13 @@ async def test_login_flow_validates_subject(
 
 
 @pytest.mark.usefixtures("current_request_with_host", "openid_server", "endpoints")
-async def test_login_flow_not_whitelisted(
+@pytest.mark.parametrize(("emails", "subjects"), [([], [])])
+async def test_login_flow_not_allowlisted(
     hass: HomeAssistant,
-    hass_client_no_auth: ClientSessionGenerator,
+    hass_client_no_auth: ClientSessionGenerator, config_entry: MockConfigEntry,
 ) -> None:
-    """Test login flow."""
-    manager = await auth_manager_from_config(
-        hass,
-        [
-            {
-                "type": "openid",
-                "configuration": CONST_DESCRIPTION_URI,
-                "client_id": CONST_CLIENT_ID,
-                "client_secret": CONST_CLIENT_SECRET,
-                "subjects": [],
-            }
-        ],
-        [],
-    )
-    hass.auth = manager
+    """Test login flow not in allowlist."""
+    manager = hass.auth
 
     client = await hass_client_no_auth()
     flow_id = await _run_external_flow(hass, manager, client)
