@@ -10,11 +10,9 @@ from aiohttp.test_utils import TestClient
 
 from homeassistant import data_entry_flow
 from homeassistant.core import HomeAssistant
-from homeassistant.auth import auth_manager_from_config
 
 from homeassistant.core_config import async_process_ha_core_config
 from homeassistant.auth import AuthManager
-from homeassistant.setup import async_setup_component
 
 from custom_components.openid_auth_provider.openid_auth_provider import (
     encode_jwt,
@@ -24,31 +22,24 @@ from pytest_homeassistant_custom_component.typing import ClientSessionGenerator
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 
-from .conftest import CONST_DESCRIPTION_URI, CONST_CLIENT_ID, CONST_CLIENT_SECRET, CONST_SUBJECT, CONST_EMAIL
+from .conftest import (
+    CONST_DESCRIPTION_URI,
+    CONST_DESCRIPTION,
+    CONST_CLIENT_ID,
+    CONST_SUBJECT,
+    CONST_EMAIL,
+    CONST_JWKS_URI,
+    CONST_JWKS,
+    CONST_TOKEN_ENDPOINT,
+    CONST_JWKS_KEY,
+    CONST_AUTHORIZATION_ENDPOINT,
+)
 
 
 _LOGGER = logging.getLogger(__name__)
 
 
 PROVIDER_MODULE = "homeassistant.auth.providers.openid"
-
-CONST_JWKS_URI = "https://jwks.test/jwks"
-CONST_JWKS_KEY = "bla"
-CONST_JWKS = {"keys": [CONST_JWKS_KEY]}
-
-CONST_AUTHORIZATION_ENDPOINT = "https://openid.test/authorize"
-CONST_TOKEN_ENDPOINT = "https://openid.test/authorize"
-
-CONST_DESCRIPTION = {
-    "issuer": "https://openid.test/",
-    "jwks_uri": CONST_JWKS_URI,
-    "authorization_endpoint": CONST_AUTHORIZATION_ENDPOINT,
-    "token_endpoint": CONST_TOKEN_ENDPOINT,
-    "token_endpoint_auth_methods_supported": "client_secret_post",
-    "id_token_signing_alg_values_supported": ["RS256", "HS256"],
-    "scopes_supported": ["openid", "email", "profile"],
-    "response_types_supported": "code",
-}
 
 CONST_ACCESS_TOKEN = "dummy_access_token"
 
@@ -101,9 +92,8 @@ async def endpoints_fixture(hass: HomeAssistant) -> None:
     """Initialize the needed endpoints and redirects."""
     await async_process_ha_core_config(
         hass,
-        {"external_url": "http://example.com"},
+        {"internal_url": "http://example.com", "external_url": "http://external.com"},
     )
-    # assert await async_setup_component(hass, "openid_auth_provider", {})
 
 
 async def _run_external_flow(
@@ -117,7 +107,7 @@ async def _run_external_flow(
         hass,
         {
             "flow_id": result["flow_id"],
-            "redirect_uri": "https://example.com/auth/openid/callback",
+            "redirect_uri": "https://example.com/auth/oidc/callback",
         },
     )
     _LOGGER.debug("flow_id=%s", result["flow_id"])
@@ -126,11 +116,11 @@ async def _run_external_flow(
     assert result["url"] == (
         f"{CONST_AUTHORIZATION_ENDPOINT}?response_type=code&client_id={
             CONST_CLIENT_ID}"
-        "&redirect_uri=https://example.com/auth/openid/callback"
+        "&redirect_uri=https://example.com/auth/oidc/callback"
         f"&state={state}&scope=email+openid+profile&nonce={CONST_NONCE}"
     )
 
-    resp = await client.get(f"/auth/openid/callback?code=abcd&state={state}")
+    resp = await client.get(f"/auth/oidc/callback?code=abcd&state={state}")
     assert resp.status == 200
     assert resp.headers["content-type"] == "text/html; charset=utf-8"
 
@@ -139,7 +129,9 @@ async def _run_external_flow(
 
 @pytest.mark.usefixtures("current_request_with_host", "openid_server", "endpoints")
 async def test_login_flow_validates_email(
-    hass: HomeAssistant, hass_client_no_auth: ClientSessionGenerator, config_entry: MockConfigEntry,
+    hass: HomeAssistant,
+    hass_client_no_auth: ClientSessionGenerator,
+    config_entry: MockConfigEntry,
 ) -> None:
     """Test login flow with emails."""
     manager = hass.auth
@@ -156,7 +148,8 @@ async def test_login_flow_validates_email(
 @pytest.mark.usefixtures("current_request_with_host", "openid_server", "endpoints")
 async def test_login_flow_validates_subject(
     hass: HomeAssistant,
-    hass_client_no_auth: ClientSessionGenerator, config_entry: MockConfigEntry,
+    hass_client_no_auth: ClientSessionGenerator,
+    config_entry: MockConfigEntry,
 ) -> None:
     """Test login flow with subjects."""
     manager = hass.auth
@@ -174,7 +167,8 @@ async def test_login_flow_validates_subject(
 @pytest.mark.parametrize(("emails", "subjects"), [([], [])])
 async def test_login_flow_not_allowlisted(
     hass: HomeAssistant,
-    hass_client_no_auth: ClientSessionGenerator, config_entry: MockConfigEntry,
+    hass_client_no_auth: ClientSessionGenerator,
+    config_entry: MockConfigEntry,
 ) -> None:
     """Test login flow not in allowlist."""
     manager = hass.auth

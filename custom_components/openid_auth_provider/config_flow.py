@@ -7,8 +7,9 @@ from typing import Any
 
 import voluptuous as vol
 
+from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from homeassistant.const import CONF_NAME
-from homeassistant.helpers import device_registry as dr, selector
+from homeassistant.helpers import selector
 from homeassistant.helpers.schema_config_entry_flow import (
     SchemaConfigFlowHandler,
     SchemaFlowFormStep,
@@ -16,11 +17,28 @@ from homeassistant.helpers.schema_config_entry_flow import (
     SchemaCommonFlowHandler,
 )
 
-from .const import DOMAIN, CONF_CONFIGURATION, CONF_CLIENT_ID, CONF_CLIENT_SECRET, CONF_EMAILS, CONF_SUBJECTS
+from .const import (
+    DOMAIN,
+    CONF_CONFIGURATION,
+    CONF_CLIENT_ID,
+    CONF_CLIENT_SECRET,
+    CONF_EMAILS,
+    CONF_SUBJECTS,
+    DISCOVERY_SUFFIX,
+)
+from .openid_auth_provider import async_get_configuration
 
 
-async def _validate_user_input(handler: SchemaCommonFlowHandler, user_input: dict[str, Any]) -> dict[str, Any]:
+async def _validate_user_input(
+    handler: SchemaCommonFlowHandler, user_input: dict[str, Any]
+) -> dict[str, Any]:
     """Validate user input."""
+    session = async_get_clientsession(handler.parent_handler.hass)
+    configuration_url = user_input[CONF_CONFIGURATION]
+    if not configuration_url.endswith(DISCOVERY_SUFFIX):
+        configuration_url = f"{configuration_url.rstrip('/')}{DISCOVERY_SUFFIX}"
+    await async_get_configuration(session, user_input[CONF_CONFIGURATION])
+
     if emails := user_input.get(CONF_EMAILS):
         user_input[CONF_EMAILS] = [email.strip() for email in emails]
     if subjects := user_input.get(CONF_SUBJECTS):
@@ -54,7 +72,6 @@ CONFIG_FLOW = {
                         multiple=True,
                     )
                 ),
-
             }
         ),
         validate_user_input=_validate_user_input,
@@ -77,4 +94,4 @@ class OpenIDAuthProviderConfigFlowHandler(SchemaConfigFlowHandler, domain=DOMAIN
 
     def async_config_entry_title(self, options: Mapping[str, Any]) -> str:
         """Return config entry title."""
-        return options[CONF_NAME]
+        return options[CONF_NAME]  # type: ignore[no-any-return]

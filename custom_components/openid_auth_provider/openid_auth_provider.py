@@ -6,21 +6,24 @@ from typing import Any, Optional, cast
 from collections.abc import Mapping
 import secrets
 
-from jose import jwt
-from aiohttp import ClientResponseError
-from aiohttp.client import ClientResponse
-import voluptuous as vol
+import aiohttp
 from aiohttp import web
+from aiohttp.client import ClientResponse
+from jose import jwt
+import voluptuous as vol
 from yarl import URL
 
 from homeassistant.components import http
+from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.exceptions import HomeAssistantError
+from homeassistant.helpers.network import get_url
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from homeassistant.helpers.config_entry_oauth2_flow import (
     LocalOAuth2Implementation,
 )
 from homeassistant.auth.models import AuthFlowContext, AuthFlowResult
+from homeassistant.auth import auth_provider_from_config
 
 
 from homeassistant.auth.providers import (
@@ -31,13 +34,23 @@ from homeassistant.auth.providers import (
 )
 from homeassistant.auth.models import Credentials, UserMeta
 
-from .const import CONF_CLIENT_ID, CONF_CLIENT_SECRET, CONF_CONFIGURATION, CONF_EMAILS, CONF_SUBJECTS
+from .const import (
+    CONF_CLIENT_ID,
+    CONF_CLIENT_SECRET,
+    CONF_CONFIGURATION,
+    CONF_EMAILS,
+    CONF_SUBJECTS,
+    AUTH_CALLBACK_PATH,
+)
 
 _LOGGER = logging.getLogger(__name__)
 
-AUTH_CALLBACK_PATH = "/auth/openid/callback"
+
 DATA_JWT_SECRET = "openid_jwt_secret"
 HEADER_FRONTEND_BASE = "HA-Frontend-Base"
+AUTH_PROVIDER_TYPE = "openid"
+
+WANTED_SCOPES = {"openid", "email", "profile"}
 
 
 CONFIG_SCHEMA = AUTH_PROVIDER_SCHEMA.extend(
@@ -75,15 +88,27 @@ class InvalidAuthError(HomeAssistantError):
     """Raised when submitting invalid authentication."""
 
 
-def register(hass: HomeAssistant) -> None:
+async def register(hass: HomeAssistant, entry: ConfigEntry) -> None:
     """Register the OpenID Auth Provider."""
+    _LOGGER.info("Registering OpenID Auth Provider")
+
     hass.http.register_view(AuthorizeCallbackView())
+
+    provider = await auth_provider_from_config(
+        hass,
+        hass.auth._store,
+        {
+            "type": AUTH_PROVIDER_TYPE,
+            **entry.options,
+        },
+    )
+    hass.auth._providers[(AUTH_PROVIDER_TYPE, None)] = provider
 
 
 async def raise_for_status(response: ClientResponse) -> None:
     """Raise exception on data failure with logging."""
     if response.status >= 400:
-        standard = ClientResponseError(
+        standard = aiohttp.ClientResponseError(
             response.request_info,
             response.history,
             code=response.status,
@@ -94,7 +119,14 @@ async def raise_for_status(response: ClientResponse) -> None:
         raise InvalidAuthError(data) from standard
 
 
-WANTED_SCOPES = {"openid", "email", "profile"}
+async def async_get_configuration(
+    session: aiohttp.ClientSession, configuration_url: str
+) -> dict[str, Any]:
+    """Get discovery document for OpenID."""
+    async with session.get(configuration_url) as response:
+        await raise_for_status(response)
+        data = await response.json()
+    return cast(dict[str, Any], OPENID_CONFIGURATION_SCHEMA(data))
 
 
 class OpenIdLocalOAuth2Implementation(LocalOAuth2Implementation):
@@ -163,13 +195,10 @@ class OpenIdLocalOAuth2Implementation(LocalOAuth2Implementation):
     @property
     def redirect_uri(self) -> str:
         """Return the redirect uri."""
-        if (req := http.current_request.get()) is None:
-            raise RuntimeError("No current request in context")
+        base_url = get_url(self.hass, allow_external=False, allow_internal=False, require_current_request=True)
+        base_url = f"{base_url.rstrip('/')}{AUTH_CALLBACK_PATH}"
+        return base_url
 
-        if (ha_host := req.headers.get(HEADER_FRONTEND_BASE)) is None:
-            raise RuntimeError("No header in request")
-
-        return f"{ha_host}{AUTH_CALLBACK_PATH}"
 
 
 @AUTH_PROVIDERS.register("openid")
@@ -185,10 +214,7 @@ class OpenIdAuthProvider(AuthProvider):
     async def async_get_configuration(self) -> dict[str, Any]:
         """Get discovery document for OpenID."""
         session = async_get_clientsession(self.hass)
-        async with session.get(self.config[CONF_CONFIGURATION]) as response:
-            await raise_for_status(response)
-            data = await response.json()
-        return cast(dict[str, Any], OPENID_CONFIGURATION_SCHEMA(data))
+        return await async_get_configuration(session, self.config[CONF_CONFIGURATION])
 
     async def async_get_jwks(self) -> dict[str, Any]:
         """Get the keys for id verification."""
@@ -323,7 +349,6 @@ class OpenIdLoginFlow(LoginFlow):
         self, user_input: Optional[dict[str, str]] = None
     ) -> AuthFlowResult:
         """Authenticate user using external step."""
-        _LOGGER.debug("async_step_authenticate=%s", user_input)
         provider = cast(OpenIdAuthProvider, self._auth_provider)
 
         if user_input:

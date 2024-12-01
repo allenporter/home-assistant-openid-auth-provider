@@ -15,7 +15,12 @@ from pytest_homeassistant_custom_component.common import (
 )
 
 from custom_components.openid_auth_provider.const import (
-    DOMAIN, CONF_CONFIGURATION, CONF_CLIENT_ID, CONF_CLIENT_SECRET, CONF_EMAILS, CONF_SUBJECTS,
+    DOMAIN,
+    CONF_CONFIGURATION,
+    CONF_CLIENT_ID,
+    CONF_CLIENT_SECRET,
+    CONF_EMAILS,
+    CONF_SUBJECTS,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -25,6 +30,24 @@ CONST_CLIENT_ID = "123client_id456"
 CONST_CLIENT_SECRET = "123client_secret456"
 CONST_SUBJECT = "248289761001"
 CONST_EMAIL = "john.doe@openid.test"
+
+
+CONST_JWKS_URI = "https://jwks.test/jwks"
+CONST_JWKS_KEY = "bla"
+CONST_JWKS = {"keys": [CONST_JWKS_KEY]}
+CONST_AUTHORIZATION_ENDPOINT = "https://openid.test/authorize"
+CONST_TOKEN_ENDPOINT = "https://openid.test/authorize"
+
+CONST_DESCRIPTION = {
+    "issuer": "https://openid.test/",
+    "jwks_uri": CONST_JWKS_URI,
+    "authorization_endpoint": CONST_AUTHORIZATION_ENDPOINT,
+    "token_endpoint": CONST_TOKEN_ENDPOINT,
+    "token_endpoint_auth_methods_supported": "client_secret_post",
+    "id_token_signing_alg_values_supported": ["RS256", "HS256"],
+    "scopes_supported": ["openid", "email", "profile"],
+    "response_types_supported": "code",
+}
 
 
 @pytest.fixture(autouse=True)
@@ -57,6 +80,7 @@ async def mock_setup_integration(
         assert await async_setup_component(hass, DOMAIN, {})
         await hass.async_block_till_done()
         yield
+
 
 @pytest.fixture(name="emails")
 def mock_emails() -> list[str]:

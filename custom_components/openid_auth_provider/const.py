@@ -7,3 +7,6 @@ CONF_CLIENT_SECRET = "client_secret"
 CONF_CONFIGURATION = "configuration"
 CONF_EMAILS = "emails"
 CONF_SUBJECTS = "subjects"
+
+DISCOVERY_SUFFIX = "/.well-known/openid-configuration"
+AUTH_CALLBACK_PATH = "/auth/oidc/callback"
