@@ -37,7 +37,7 @@ async def test_select_device(
         await hass.async_block_till_done()
 
     assert result.get("type") is FlowResultType.CREATE_ENTRY
-    assert result.get("title") == "Device name"
+    assert result.get("title") == "Open ID Auth Provider"
     assert result.get("data") == {}
     assert result.get("options") == {
         CONF_DEVICE_ID: zwave_device_id,

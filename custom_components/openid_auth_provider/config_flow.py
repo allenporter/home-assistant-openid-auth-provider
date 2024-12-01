@@ -45,6 +45,4 @@ class OpenIDAuthProviderConfigFlowHandler(SchemaConfigFlowHandler, domain=DOMAIN
 
     def async_config_entry_title(self, options: Mapping[str, Any]) -> str:
         """Return config entry title."""
-        registry = dr.async_get(self.hass)
-        device_entry = registry.async_get(options[CONF_DEVICE_ID])
-        return device_entry.name_by_user or device_entry.name
+        return "Open ID Auth Provider"
