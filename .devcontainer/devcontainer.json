@@ -1,6 +1,6 @@
 {
     "name": "Home Assistant Custom Component Env",
-    "image": "mcr.microsoft.com/devcontainers/python:dev-3.13-bullseye",
+    "image": "mcr.microsoft.com/devcontainers/python:1-3.13",
     "postCreateCommand": ".devcontainer/setup",
     "forwardPorts": [
         8123
