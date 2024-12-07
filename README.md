@@ -8,6 +8,15 @@ While efforts have been made to ensure the security and functionality of this so
 
 If you have concerns about security, performance, or compatibility, please consider reviewing the code before installation and ensure it meets your standards. This software is provided "as is," without warranty of any kind.
 
+## Development Status
+
+This custom component packages previous work done by others:
+
+- https://github.com/home-assistant/core/pull/32926 by elupus
+- https://github.com/home-assistant/frontend/pull/14471 by christiaangoossens
+
+The current status is that it also requires a Home Assistant Frontend PR to support external steps in the login flow which is [in progress](https://github.com/home-assistant/frontend/pull/23204)
+
 ## Pre-requisites
 
 You'll need an existing IDP set up. Here is an example setup for testing out [OpenID Connect with DexIDP](https://gist.github.com/bo0tzz/9531150b6aef0aafef5f739f7e903875).
