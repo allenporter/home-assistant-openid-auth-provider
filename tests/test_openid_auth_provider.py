@@ -112,7 +112,7 @@ async def _run_external_flow(
     )
     _LOGGER.debug("flow_id=%s", result["flow_id"])
 
-    assert result["type"] == data_entry_flow.RESULT_TYPE_EXTERNAL_STEP
+    assert result["type"] == data_entry_flow.FlowResultType.EXTERNAL_STEP
     assert result["url"] == (
         f"{CONST_AUTHORIZATION_ENDPOINT}?response_type=code&client_id={
             CONST_CLIENT_ID}"
@@ -141,7 +141,7 @@ async def test_login_flow_validates_email(
 
     result = await manager.login_flow.async_configure(flow_id)
 
-    assert result["type"] == data_entry_flow.RESULT_TYPE_CREATE_ENTRY
+    assert result["type"] == data_entry_flow.FlowResultType.CREATE_ENTRY
     assert result["data"]["email"] == CONST_EMAIL
 
 
@@ -159,7 +159,7 @@ async def test_login_flow_validates_subject(
 
     result = await manager.login_flow.async_configure(flow_id)
 
-    assert result["type"] == data_entry_flow.RESULT_TYPE_CREATE_ENTRY
+    assert result["type"] == data_entry_flow.FlowResultType.CREATE_ENTRY
     assert result["data"]["sub"] == CONST_SUBJECT
 
 
@@ -178,4 +178,4 @@ async def test_login_flow_not_allowlisted(
 
     result = await manager.login_flow.async_configure(flow_id)
 
-    assert result["type"] == data_entry_flow.RESULT_TYPE_ABORT
+    assert result["type"] == data_entry_flow.FlowResultType.ABORT

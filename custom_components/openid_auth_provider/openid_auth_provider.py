@@ -194,15 +194,18 @@ class OpenIdLocalOAuth2Implementation(LocalOAuth2Implementation):
 
     @property
     def redirect_uri(self) -> str:
-        """Return the redirect uri."""
-        base_url = get_url(
-            self.hass,
-            allow_external=False,
-            allow_internal=False,
-            require_current_request=True,
-        )
-        base_url = f"{base_url.rstrip('/')}{AUTH_CALLBACK_PATH}"
-        return base_url
+        """Return the redirect uri.
+
+        This is similar to the oauth config flow, but doers not use "my" since
+        the callback paths are different.
+        """
+        if (req := http.current_request.get()) is None:
+            raise RuntimeError("No current request in context")
+
+        if (ha_host := req.headers.get(HEADER_FRONTEND_BASE)) is None:
+            raise RuntimeError("No header in request")
+
+        return f"{ha_host}{AUTH_CALLBACK_PATH}"
 
 
 @AUTH_PROVIDERS.register("openid")
