@@ -2,6 +2,7 @@
 
 from datetime import datetime, timezone
 from unittest.mock import patch
+from collections.abc import Generator
 
 import logging
 from jose import jwt
@@ -40,11 +41,8 @@ _LOGGER = logging.getLogger(__name__)
 
 
 PROVIDER_MODULE = "homeassistant.auth.providers.openid"
-
 CONST_ACCESS_TOKEN = "dummy_access_token"
-
 CONST_NONCE = "dummy_nonce"
-
 CONST_ID_TOKEN = {
     "iss": "https://openid.test/",
     "sub": CONST_SUBJECT,
@@ -56,6 +54,7 @@ CONST_ID_TOKEN = {
     "email": CONST_EMAIL,
     "email_verified": True,
 }
+REDIRECT_URL = "https://example.com/auth/oidc/callback"
 
 
 @pytest.fixture(name="openid_server")
@@ -96,27 +95,36 @@ async def endpoints_fixture(hass: HomeAssistant) -> None:
     )
 
 
+@pytest.fixture(autouse=True)
+def token_fixture(hass: HomeAssistant) -> Generator[None, None, None]:
+    with patch(f"{PROVIDER_MODULE}.token_hex") as token_hex:
+        token_hex.return_value = CONST_NONCE
+        yield
+
+
+def encode_redirect_jwt(hass: HomeAssistant, flow_id: str) -> str:
+    return encode_jwt(
+        hass,
+        {
+            "flow_id": flow_id,
+            "redirect_uri": REDIRECT_URL,
+        },
+    )
+
+
 async def _run_external_flow(
     hass: HomeAssistant, manager: AuthManager, client: TestClient
 ) -> str:
-    with patch(f"{PROVIDER_MODULE}.token_hex") as token_hex:
-        token_hex.return_value = CONST_NONCE
-        result = await manager.login_flow.async_init(("openid", None))  # type: ignore
+    result = await manager.login_flow.async_init(("openid", None))  # type: ignore
 
-    state = encode_jwt(
-        hass,
-        {
-            "flow_id": result["flow_id"],
-            "redirect_uri": "https://example.com/auth/oidc/callback",
-        },
-    )
+    state = encode_redirect_jwt(hass, result["flow_id"])
     _LOGGER.debug("flow_id=%s", result["flow_id"])
 
     assert result["type"] == data_entry_flow.FlowResultType.EXTERNAL_STEP
     assert result["url"] == (
         f"{CONST_AUTHORIZATION_ENDPOINT}?response_type=code&client_id={
             CONST_CLIENT_ID}"
-        "&redirect_uri=https://example.com/auth/oidc/callback"
+        f"&redirect_uri={REDIRECT_URL}"
         f"&state={state}&scope=email+openid+profile&nonce={CONST_NONCE}"
     )
 
@@ -179,3 +187,32 @@ async def test_login_flow_not_allowlisted(
     result = await manager.login_flow.async_configure(flow_id)
 
     assert result["type"] == data_entry_flow.FlowResultType.ABORT
+
+
+@pytest.mark.usefixtures("current_request_with_host", "openid_server", "endpoints")
+async def test_login_flow_invalid_jwt(
+    hass: HomeAssistant,
+    hass_client_no_auth: ClientSessionGenerator,
+    config_entry: MockConfigEntry,
+) -> None:
+    """Test login flow not in allowlist."""
+    manager = hass.auth
+
+    client = await hass_client_no_auth()
+
+    result = await manager.login_flow.async_init(("openid", None))  # type: ignore
+
+    state = encode_redirect_jwt(hass, result["flow_id"])
+    _LOGGER.debug("flow_id=%s", result["flow_id"])
+
+    assert result["type"] == data_entry_flow.FlowResultType.EXTERNAL_STEP
+    assert result["url"] == (
+        f"{CONST_AUTHORIZATION_ENDPOINT}?response_type=code&client_id={
+            CONST_CLIENT_ID}"
+        f"&redirect_uri={REDIRECT_URL}"
+        f"&state={state}&scope=email+openid+profile&nonce={CONST_NONCE}"
+    )
+
+    state += "invalid-data"
+    resp = await client.get(f"/auth/oidc/callback?code=abcd&state={state}")
+    assert resp.status == 400

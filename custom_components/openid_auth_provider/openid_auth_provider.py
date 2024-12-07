@@ -12,6 +12,7 @@ from aiohttp.client import ClientResponse
 from jose import jwt
 import voluptuous as vol
 from yarl import URL
+from jwt.exceptions import DecodeError
 
 from homeassistant.components import http
 from homeassistant.config_entries import ConfigEntry
@@ -264,7 +265,7 @@ class OpenIdAuthProvider(AuthProvider):
         if id_token.get("nonce") != nonce:
             raise InvalidAuthError("Nonce mismatch in id_token")
 
-        return cast(dict[str, Any], id_token)
+        return id_token
 
     def _authorize_id_token(self, id_token: dict[str, Any]) -> dict[str, Any]:
         """Authorize an id_token according to our internal database."""
@@ -385,7 +386,7 @@ def encode_jwt(hass: HomeAssistant, data: dict) -> str:
     if (secret := hass.data.get(DATA_JWT_SECRET)) is None:
         secret = hass.data[DATA_JWT_SECRET] = secrets.token_hex()
 
-    return jwt.encode(data, secret, algorithm="HS256")  # type: ignore
+    return jwt.encode(data, secret, algorithm="HS256")
 
 
 @callback
@@ -397,8 +398,8 @@ def decode_jwt(hass: HomeAssistant, encoded: str) -> dict[str, Any] | None:
         return None
 
     try:
-        return jwt.decode(encoded, secret, algorithms=["HS256"])  # type: ignore
-    except jwt.JWTError:
+        return jwt.decode(encoded, secret, algorithms=["HS256"])
+    except DecodeError:
         return None
 
 
@@ -418,6 +419,7 @@ class AuthorizeCallbackView(http.HomeAssistantView):
         state = decode_jwt(hass, request.query["state"])
 
         if state is None:
+            _LOGGER.info("OIDC request contained invalid state")
             return web.Response(
                 text=(
                     "Invalid state. Is My Home Assistant configured "
