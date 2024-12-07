@@ -15,6 +15,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.core_config import async_process_ha_core_config
 from homeassistant.auth import AuthManager
 
+from custom_components.openid_auth_provider import DOMAIN
 from custom_components.openid_auth_provider.openid_auth_provider import (
     encode_jwt,
 )
@@ -40,7 +41,7 @@ from .conftest import (
 _LOGGER = logging.getLogger(__name__)
 
 
-PROVIDER_MODULE = "homeassistant.auth.providers.openid"
+PROVIDER_MODULE = f"homeassistant.auth.providers.{DOMAIN}"
 CONST_ACCESS_TOKEN = "dummy_access_token"
 CONST_NONCE = "dummy_nonce"
 CONST_ID_TOKEN = {
@@ -115,7 +116,7 @@ def encode_redirect_jwt(hass: HomeAssistant, flow_id: str) -> str:
 async def _run_external_flow(
     hass: HomeAssistant, manager: AuthManager, client: TestClient
 ) -> str:
-    result = await manager.login_flow.async_init(("openid", None))  # type: ignore
+    result = await manager.login_flow.async_init((DOMAIN, None))  # type: ignore
 
     state = encode_redirect_jwt(hass, result["flow_id"])
     _LOGGER.debug("flow_id=%s", result["flow_id"])
@@ -200,7 +201,7 @@ async def test_login_flow_invalid_jwt(
 
     client = await hass_client_no_auth()
 
-    result = await manager.login_flow.async_init(("openid", None))  # type: ignore
+    result = await manager.login_flow.async_init((DOMAIN, None))  # type: ignore
 
     state = encode_redirect_jwt(hass, result["flow_id"])
     _LOGGER.debug("flow_id=%s", result["flow_id"])

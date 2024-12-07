@@ -25,7 +25,7 @@ PLATFORMS: tuple[Platform] = ()  # type: ignore
 
 async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
     """Set up the config."""
-    sys.modules["homeassistant.auth.providers.openid"] = openid_auth_provider
+    sys.modules[f"homeassistant.auth.providers.{DOMAIN}"] = openid_auth_provider
     return True
 
 

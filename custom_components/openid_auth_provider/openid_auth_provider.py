@@ -42,6 +42,7 @@ from .const import (
     CONF_EMAILS,
     CONF_SUBJECTS,
     AUTH_CALLBACK_PATH,
+    DOMAIN,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -49,7 +50,7 @@ _LOGGER = logging.getLogger(__name__)
 
 DATA_JWT_SECRET = "openid_jwt_secret"
 HEADER_FRONTEND_BASE = "HA-Frontend-Base"
-AUTH_PROVIDER_TYPE = "openid"
+AUTH_PROVIDER_TYPE = DOMAIN
 
 WANTED_SCOPES = {"openid", "email", "profile"}
 
@@ -100,6 +101,7 @@ async def register(hass: HomeAssistant, entry: ConfigEntry) -> None:
         hass.auth._store,
         {
             "type": AUTH_PROVIDER_TYPE,
+            "name": entry.title,
             **entry.options,
         },
     )
@@ -216,15 +218,11 @@ class OpenIdLocalOAuth2Implementation(LocalOAuth2Implementation):
         return f"{ha_host}{AUTH_CALLBACK_PATH}"
 
 
-@AUTH_PROVIDERS.register("openid")
+@AUTH_PROVIDERS.register(DOMAIN)
 class OpenIdAuthProvider(AuthProvider):
     """Auth provider using openid connect as the authentication source."""
 
     DEFAULT_TITLE = "OpenID Connect"
-
-    _configuration: dict[str, Any]
-    _jwks: dict[str, Any]
-    _oauth2: OpenIdLocalOAuth2Implementation
 
     async def async_get_configuration(self) -> dict[str, Any]:
         """Get discovery document for OpenID."""
@@ -364,6 +362,7 @@ class OpenIdLoginFlow(LoginFlow):
         provider = cast(OpenIdAuthProvider, self._auth_provider)
 
         if user_input:
+            _LOGGER.debug("Completing external step")
             self.external_data = user_input
             return self.async_external_step_done(next_step_id="authorize")
 
@@ -385,6 +384,7 @@ class OpenIdLoginFlow(LoginFlow):
         except InvalidAuthError as error:
             _LOGGER.error("Login failed: %s", str(error))
             return self.async_abort(reason="invalid_auth")
+        _LOGGER.info("Completed authorize flow")
         return await self.async_finish(result)
 
 
@@ -448,7 +448,7 @@ class AuthorizeCallbackView(http.HomeAssistantView):
         flow_mgr = hass.auth.login_flow
 
         await flow_mgr.async_configure(flow_id=state["flow_id"], user_input=user_input)
-        _LOGGER.debug("Resumed OAuth configuration flow")
+        _LOGGER.debug("Resumed OpenID login flow")
         return web.Response(
             headers={"content-type": "text/html"},
             text="<script>if (window.opener) { window.opener.postMessage({type: 'externalCallback'}); } window.close();</script>",
