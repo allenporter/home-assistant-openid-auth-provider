@@ -45,6 +45,12 @@ async def _validate_user_input(
         user_input[CONF_SUBJECTS] = [subject.strip() for subject in subjects]
     if emails is None and subjects is None:
         raise SchemaFlowError("missing_email_or_subject")
+
+    await handler.parent_handler.async_set_unique_id(  # type: ignore[union-attr]
+        unique_id=user_input[CONF_CLIENT_ID]
+    )
+    handler.parent_handler._abort_if_unique_id_configured()  # type: ignore[union-attr]
+
     return user_input
 
 

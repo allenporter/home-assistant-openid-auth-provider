@@ -112,6 +112,7 @@ async def mock_config_entry(
             CONF_SUBJECTS: subjects,
             CONF_EMAILS: emails,
         },
+        unique_id=CONST_CLIENT_ID,
     )
     config_entry.add_to_hass(hass)
     assert await hass.config_entries.async_setup(config_entry.entry_id)

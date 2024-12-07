@@ -56,6 +56,7 @@ async def test_config_flow(
 
     assert result.get("type") is FlowResultType.CREATE_ENTRY
     assert result.get("title") == "Example"
+    assert result.get("context", {}).get("unique_id") == "client-id"
     assert result.get("data") == {}
     assert result.get("options") == {
         CONF_NAME: "Example",

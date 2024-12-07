@@ -101,11 +101,17 @@ async def register(hass: HomeAssistant, entry: ConfigEntry) -> None:
         hass.auth._store,
         {
             "type": AUTH_PROVIDER_TYPE,
+            "id": entry.unique_id,
             "name": entry.title,
             **entry.options,
         },
     )
     hass.auth._providers[(AUTH_PROVIDER_TYPE, None)] = provider
+
+    def unsub() -> None:
+        del hass.auth._providers[(AUTH_PROVIDER_TYPE, None)]
+
+    entry.async_on_unload(unsub)
 
 
 async def raise_for_status(response: ClientResponse) -> None:
