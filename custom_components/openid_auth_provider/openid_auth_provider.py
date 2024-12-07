@@ -10,10 +10,11 @@ import aiohttp
 from aiohttp import web
 from aiohttp.client import ClientResponse
 from jose import jwt
+from jose.exceptions import JWTError
 import voluptuous as vol
 from yarl import URL
-from jwt.exceptions import DecodeError
 
+from homeassistant.helpers.network import get_url
 from homeassistant.components import http
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant, callback
@@ -203,7 +204,14 @@ class OpenIdLocalOAuth2Implementation(LocalOAuth2Implementation):
             raise RuntimeError("No current request in context")
 
         if (ha_host := req.headers.get(HEADER_FRONTEND_BASE)) is None:
-            raise RuntimeError("No header in request")
+            base_url = get_url(
+                self.hass,
+                allow_external=False,
+                allow_internal=False,
+                require_current_request=True,
+            )
+            base_url = f"{base_url.rstrip('/')}{AUTH_CALLBACK_PATH}"
+            return base_url
 
         return f"{ha_host}{AUTH_CALLBACK_PATH}"
 
@@ -399,7 +407,7 @@ def decode_jwt(hass: HomeAssistant, encoded: str) -> dict[str, Any] | None:
 
     try:
         return jwt.decode(encoded, secret, algorithms=["HS256"])
-    except DecodeError:
+    except JWTError:
         return None
 
 
