@@ -34,9 +34,9 @@ The `username` of the user in the IDP needs to match the username of a Home Assi
 
 ## Usage
 
-1. The login page should now show an additional login option to use the IDP
+The login page should now show an additional login option to use the IDP:
 
-![Screenshot](resources/login-screenshot.png)
+<img src="resources/login-screenshot.png" width=300>
 
 ## Development
 
