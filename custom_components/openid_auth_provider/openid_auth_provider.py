@@ -195,10 +195,14 @@ class OpenIdLocalOAuth2Implementation(LocalOAuth2Implementation):
     @property
     def redirect_uri(self) -> str:
         """Return the redirect uri."""
-        base_url = get_url(self.hass, allow_external=False, allow_internal=False, require_current_request=True)
+        base_url = get_url(
+            self.hass,
+            allow_external=False,
+            allow_internal=False,
+            require_current_request=True,
+        )
         base_url = f"{base_url.rstrip('/')}{AUTH_CALLBACK_PATH}"
         return base_url
-
 
 
 @AUTH_PROVIDERS.register("openid")
@@ -247,21 +251,18 @@ class OpenIdAuthProvider(AuthProvider):
         algorithms = self._configuration["id_token_signing_alg_values_supported"]
         issuer = self._configuration["issuer"]
 
-        id_token = cast(
-            dict[str, Any],
-            jwt.decode(
-                token["id_token"],
-                algorithms=algorithms,
-                issuer=issuer,
-                key=self._jwks,
-                audience=self.config[CONF_CLIENT_ID],
-                access_token=token["access_token"],
-            ),
+        id_token = jwt.decode(
+            token["id_token"],
+            algorithms=algorithms,
+            issuer=issuer,
+            key=self._jwks,
+            audience=self.config[CONF_CLIENT_ID],
+            access_token=token["access_token"],
         )
         if id_token.get("nonce") != nonce:
             raise InvalidAuthError("Nonce mismatch in id_token")
 
-        return id_token
+        return cast(dict[str, Any], id_token)
 
     def _authorize_id_token(self, id_token: dict[str, Any]) -> dict[str, Any]:
         """Authorize an id_token according to our internal database."""
@@ -395,7 +396,7 @@ def decode_jwt(hass: HomeAssistant, encoded: str) -> dict[str, Any] | None:
 
     try:
         return jwt.decode(encoded, secret, algorithms=["HS256"])  # type: ignore
-    except jwt.InvalidTokenError:
+    except jwt.JWTError:
         return None
 
 
