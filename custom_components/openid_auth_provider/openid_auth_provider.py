@@ -339,7 +339,7 @@ class OpenIdAuthProvider(AuthProvider):
             name = cast(str, credentials.data["email"]).split("@", 1)[0]
         else:
             name = credentials.data["sub"]
-
+        _LOGGER.debug("Creating user meta for '%s'", name)
         return UserMeta(name=name, is_active=True)
 
 
