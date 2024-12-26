@@ -25,13 +25,19 @@ PLATFORMS: tuple[Platform] = ()  # type: ignore
 
 async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
     """Set up the config."""
+    await openid_auth_provider.async_setup(hass)
+
+    # Currently auth providers are not real platforms and they assume
+    # they are in a specific package. This is a hack to make it work for now
+    # until home assistant is extended with a real with platform.
     sys.modules[f"homeassistant.auth.providers.{DOMAIN}"] = openid_auth_provider
+
     return True
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Set up a config entry."""
-    await openid_auth_provider.register(hass, entry)
+    await openid_auth_provider.async_setup_entry(hass, entry)
 
     await hass.config_entries.async_forward_entry_setups(
         entry,

@@ -90,12 +90,18 @@ class InvalidAuthError(HomeAssistantError):
     """Raised when submitting invalid authentication."""
 
 
-async def register(hass: HomeAssistant, entry: ConfigEntry) -> None:
+async def async_setup(hass: HomeAssistant) -> None:
+    """Register the OpenID Auth Provider views."""
+    hass.http.register_view(AuthorizeCallbackView())
+
+
+async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
     """Register the OpenID Auth Provider."""
     _LOGGER.info("Registering OpenID Auth Provider")
 
-    hass.http.register_view(AuthorizeCallbackView())
+    key = (AUTH_PROVIDER_TYPE, entry.unique_id)
 
+    # Use private APIs until there is a real auth platform
     provider = await auth_provider_from_config(
         hass,
         hass.auth._store,
@@ -106,7 +112,6 @@ async def register(hass: HomeAssistant, entry: ConfigEntry) -> None:
             **entry.options,
         },
     )
-    key = (AUTH_PROVIDER_TYPE, entry.unique_id)
     hass.auth._providers[key] = provider
 
     def unsub() -> None:
