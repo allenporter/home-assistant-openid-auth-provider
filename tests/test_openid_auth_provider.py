@@ -56,6 +56,7 @@ CONST_ID_TOKEN = {
     "email_verified": True,
 }
 REDIRECT_URL = "https://example.com/auth/oidc/callback"
+PROVIDER_KEY = (DOMAIN, CONST_CLIENT_ID)
 
 
 @pytest.fixture(name="openid_server")
@@ -116,7 +117,7 @@ def encode_redirect_jwt(hass: HomeAssistant, flow_id: str) -> str:
 async def _run_external_flow(
     hass: HomeAssistant, manager: AuthManager, client: TestClient
 ) -> str:
-    result = await manager.login_flow.async_init((DOMAIN, None))  # type: ignore
+    result = await manager.login_flow.async_init(PROVIDER_KEY)
 
     state = encode_redirect_jwt(hass, result["flow_id"])
     _LOGGER.debug("flow_id=%s", result["flow_id"])
@@ -201,7 +202,7 @@ async def test_login_flow_invalid_jwt(
 
     client = await hass_client_no_auth()
 
-    result = await manager.login_flow.async_init((DOMAIN, None))  # type: ignore
+    result = await manager.login_flow.async_init(PROVIDER_KEY)
 
     state = encode_redirect_jwt(hass, result["flow_id"])
     _LOGGER.debug("flow_id=%s", result["flow_id"])
