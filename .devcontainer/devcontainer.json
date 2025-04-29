@@ -1,7 +1,6 @@
 {
     "name": "Home Assistant Custom Component Env",
     "image": "mcr.microsoft.com/devcontainers/python:3.12-bullseye",
-    "postCreateCommand": "pip3 install -r requirements_dev.txt",
     "forwardPorts": [
         8123
     ],
