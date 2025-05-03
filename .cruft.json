@@ -1,6 +1,6 @@
 {
   "template": "http://github.com/allenporter/cookiecutter-home-assistant-custom-component",
-  "commit": "eb66e8c3b87abf9ac12e0ed0efa437806994cfa9",
+  "commit": "9fc2c84884c80e87590526a44baa514cf9aa1ecf",
   "checkout": null,
   "context": {
     "cookiecutter": {
@@ -12,7 +12,8 @@
       "name": "OpenID Auth Provider",
       "description": "A Home Assistant Authentication Provider that can use Open ID",
       "version": "0.0.1",
-      "_template": "http://github.com/allenporter/cookiecutter-home-assistant-custom-component"
+      "_template": "http://github.com/allenporter/cookiecutter-home-assistant-custom-component",
+      "_commit": "9fc2c84884c80e87590526a44baa514cf9aa1ecf"
     }
   },
   "directory": null
