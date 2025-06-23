@@ -15,7 +15,7 @@ This custom component packages previous work done by others:
 - https://github.com/home-assistant/core/pull/32926 by elupus
 - https://github.com/home-assistant/frontend/pull/14471 by christiaangoossens
 
-The current status is that it also requires a Home Assistant Frontend PR to support external steps in the login flow which is [in progress](https://github.com/home-assistant/frontend/pull/23204)
+The current plan is to downgrade this component and work on adding the necessary features in Home Assistant to securely support Open AI. The main work involved will be to simplify the onboarding experience such as providing the ability to sign in with a link, have passwordless created accounts that can change password on sign in, or support external auth providers like OpenID. This will take some time to implement.
 
 ## Pre-requisites
 
