@@ -19,7 +19,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: astral-sh/ruff-action@v3.4
-      - uses: codespell-project/actions-codespell@v2.0
+      - uses: codespell-project/actions-codespell@v2.2
         with:
           check_hidden: false
           ignore_words_list: hass
